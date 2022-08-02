@@ -1,0 +1,1 @@
+mpv --playlist=playlist.txt --no-audio-display --save-position-on-quit --gapless-audio=yes --volume=30

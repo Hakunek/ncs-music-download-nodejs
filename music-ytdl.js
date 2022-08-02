@@ -1,21 +1,32 @@
-const fs = require("fs");
-const ytpl = require("ytpl");
-//var exec = require("child_process").exec;
-const readline = require("readline");
-const ytdl = require("ytdl-core");
-const ffmpeg = require("fluent-ffmpeg");
-const ffmpegStatic = require("ffmpeg-static");
-console.log(ffmpegStatic)
-ffmpeg.setFfmpegPath(ffmpegStatic)
+const fs = require("fs"),
+    ytpl = require("ytpl"),
+    readline = require("readline"),
+    ytdl = require("ytdl-core"),
+    ffmpeg = require("fluent-ffmpeg"),
+    ffmpegStatic = require("ffmpeg-static");
+
+ffmpeg.setFfmpegPath(ffmpegStatic);
+console.time("Job done within");
 console.log("Loadin...");
 
-async function sleep(ms){
-    return new Promise(setTimeout(()=>{},ms))
+function sleep(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+}
+let config = require("./config.js")
+try {
+    if (!fs.existsSync("./mp3")) {
+        // Directory does not exist.
+        // Create new one
+        console.log("Directory './mp3' does not exist.\nCreating...");
+        fs.mkdirSync("./mp3");
+    }
+} catch (e) {
+    console.log("An error occurred. " + e);
+    process.exit(1);
 }
 
-
 async function musicLinks() {
-    const playlist = await ytpl("UU_aEa8K-EOJ3D6gOs7HcyNg", {
+    const playlist = await ytpl(config.playlistId, {
         limit: Infinity,
     });
     let queue = [];
@@ -27,10 +38,17 @@ async function musicLinks() {
             e.title.startsWith("NCS:") ||
             e.title.includes("Album Mix") ||
             e.title.includes("NCS is") ||
-            e.title == "The Creation of NCS"
+            e.title.includes("Free EDM Music Mix") ||
+            e.title.includes("NoCopyrightSounds 10 Year Mix (Copyright Free Gaming Music)") ||
+            e.title == "The Creation of NCS" ||
+            e.title == "NoCopyrightSounds Live Stream" ||
+            e.title.startsWith("10 Years Of NCS") ||
+            e.title.endsWith("[NCS Mix]") ||
+            e.title.endsWith("(Track & Build 2.0 Winners)") ||
+            e.title.endsWith("(Album Mix) [NCS Release]")
         )
             return;
-        queue.push(e.url.split("&list=UU_aEa8K-EOJ3D6gOs7HcyNg").shift());
+        queue.push(e.url.split(`&list=${config.playlistId}`).shift());
     });
     const ar = [...new Set(queue)];
     return ar;
@@ -38,23 +56,29 @@ async function musicLinks() {
 
 async function downloading(download) {
     // ------------------------------------------------------------- DOWNLOAD SECTION -------------------------------------------------------------
-    download.forEach(async downLink =>{
+    let one = true,
+        two = 0;
+    for (const downLink of download) {
         let id = downLink.split("https://www.youtube.com/watch?v=").pop(),
             stream = ytdl(id, { quality: "highestaudio" }),
             info = await ytdl.getInfo(downLink, { quality: "highestaudio" });
-        let start = Date.now();
         ffmpeg(stream)
-             .audioBitrate(128)
-             .save(`./mp3/${info.videoDetails.title}-${info.videoDetails.videoId}.mp3`)
-             .on("progress", (p) => {
-                 readline.cursorTo(process.stdout, 0);
-                 process.stdout.write(`${p.targetSize}kb downloaded`);
-             })
-             .on("end", () => {
-                 console.log(`\ndone, ${(Date.now() - start) / 1000}s`);
-             });
-        await sleep(1000)
-    })
+            .audioBitrate(128)
+            .save(`./mp3/${info.videoDetails.title}-${info.videoDetails.videoId}.mp3`)
+            .on("progress", (p) => {
+                readline.cursorTo(process.stdout, 0);
+                process.stdout.write(`${p.targetSize}kb downloaded`);
+            })
+            .on("end", () => {
+                two++;
+                console.log(`${info.videoDetails.title}-${info.videoDetails.videoId} downloaded`);
+                if (two >= download.length - 1) {
+                    one = false;
+                }
+            });
+        sleep(1000);
+    }
+    return console.timeEnd("Job done within");
 }
 
 async function mniam() {
@@ -68,13 +92,14 @@ async function mniam() {
     let res;
     for (const file of files) {
         if (file.includes("Release]-")) res = file.split("Release]-").pop();
+        else if (file.includes("release]-")) res = file.split("release]-").pop();
         else if (file.includes("Video]-")) res = file.split("Video]-").pop();
         else if (file.includes("Video-")) res = file.split("Video-").pop();
         else if (file.includes("Release-")) res = file.split("Release-").pop();
         else if (file.includes("Winners)-")) res = file.split("Winners)-").pop();
         else if (file.includes("Launchpad-")) res = file.split("Launchpad-").pop();
         else if (file.includes("Music]-")) res = file.split("Music]-").pop();
-        else console.log(file + " !needs attention!");
+        else console.log("\n" + file + " !needs attention!\n");
         temp1.push(res);
     }
 
@@ -85,14 +110,12 @@ async function mniam() {
     for (const file of links) {
         temp3.push(file.split("https://www.youtube.com/watch?v=").pop());
     }
-    console.log(links.length);
-    console.log(temp2.length);
-    console.log(temp3.length);
-    console.log("Getting Music links");
+    console.log(`Local: ${temp2.length}`);
+    console.log(`Cloud: ${temp3.length}`);
     temp3.filter((n) => !temp2.includes(n)).forEach((e) => download.push("https://www.youtube.com/watch?v=" + e));
     console.log(`Music to download: ${download.length}\n`, download);
 
     downloading(download);
 }
-//musicLinks()
+
 mniam();
