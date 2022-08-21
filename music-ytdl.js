@@ -1,7 +1,7 @@
 const fs = require("fs"),
     ytpl = require("ytpl"),
     readline = require("readline"),
-    ytdl = require("ytdl-core"),
+    ytdl = require("@distube/ytdl-core"),
     ffmpeg = require("fluent-ffmpeg"),
     ffmpegStatic = require("ffmpeg-static");
 
@@ -12,7 +12,7 @@ console.log("Loadin...");
 function sleep(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
 }
-let config = require("./config.js")
+let config = require("./config.js");
 try {
     if (!fs.existsSync("./mp3")) {
         // Directory does not exist.

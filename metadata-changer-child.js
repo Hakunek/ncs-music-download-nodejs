@@ -1,7 +1,7 @@
 const fs = require("fs"),
     NodeID3 = require("node-id3"),
     img = fs.readFileSync("./mp3.jpeg"),
-    ytdl = require("ytdl-core"),
+    ytdl = require("@distube/ytdl-core"),
     check = require("./vidProperitesChecker"),
     fetch = require("node-fetch"),
     id = parseInt(process.argv[2]);
@@ -52,8 +52,8 @@ function sleep(ms) {
             }
         } catch (e) {
             console.log(e, file);
-            let res = JSON.stringify({url: url, file: file})
-            console.log(res)
+            let res = JSON.stringify({ url: url, file: file });
+            console.log(res);
         }
     });
 })();
