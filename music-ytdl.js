@@ -14,11 +14,11 @@ function sleep(ms) {
 }
 let config = require("./config.js");
 try {
-    if (!fs.existsSync("./mp3")) {
+    if (!fs.existsSync(`${config.pathForMusicFiles}`)) {
         // Directory does not exist.
         // Create new one
-        console.log("Directory './mp3' does not exist.\nCreating...");
-        fs.mkdirSync("./mp3");
+        console.log(`Directory ${config.pathForMusicFiles} does not exist.\nCreating...`);
+        fs.mkdirSync(config.pathForMusicFiles);
     }
 } catch (e) {
     console.log("An error occurred. " + e);
@@ -64,7 +64,7 @@ async function downloading(download) {
             info = await ytdl.getInfo(downLink, { quality: "highestaudio" });
         ffmpeg(stream)
             .audioBitrate(128)
-            .save(`./mp3/${info.videoDetails.title}-${info.videoDetails.videoId}.mp3`)
+            .save(`${config.pathForMusicFiles}/${info.videoDetails.title}-${info.videoDetails.videoId}.mp3`)
             .on("progress", (p) => {
                 readline.cursorTo(process.stdout, 0);
                 process.stdout.write(`${p.targetSize}kb downloaded`);
@@ -84,7 +84,7 @@ async function downloading(download) {
 async function mniam() {
     console.log("Scanning...");
     // ------------------------------------------------------------- FETCH & FILTER SECTION -------------------------------------------------------------
-    const files = fs.readdirSync("./mp3").filter((e) => e.endsWith(".mp3"));
+    const files = fs.readdirSync(`${config.pathForMusicFiles}`).filter((e) => e.endsWith(".mp3"));
     const temp1 = [],
         temp2 = [],
         temp3 = [],

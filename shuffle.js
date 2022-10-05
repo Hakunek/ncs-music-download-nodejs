@@ -1,4 +1,4 @@
-const fs = require("fs"),
+const config = require("./config");const fs = require("fs"),
     getSortedFiles = (dir) => {
         const files = fs.readdirSync(dir).filter((f) => f.endsWith(".mp3"));
 
@@ -11,7 +11,7 @@ const fs = require("fs"),
             .map((file) => file.name);
     };
 Promise.resolve()
-    .then(() => getSortedFiles("./mp3"))
+    .then(() => getSortedFiles(config.pathForMusicFiles))
     .then((files) => {
-        fs.writeFileSync("./playlist.txt", "E:\\.github-package-dev\\music\\mp3\\" + files.join("\nE:\\.github-package-dev\\music\\mp3\\"));
+        fs.writeFileSync(config.pathForMusicFiles+"/../playlist.txt", config.pathForMusicFiles + files.join("\n"+config.pathForMusicFiles));
     });
