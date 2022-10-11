@@ -139,7 +139,7 @@ app.put(`/leftover`, (request, result) => {
             if (text == 1) {
                 c++;
                 readline.cursorTo(process.stdout, 0);
-                process.stdout.write(`${Math.round((c / b) * 1000) / 10}%\t`);
+                process.stdout.write(`${Math.round((c / b) * 1000) / 10/splitted.length}%\t`);
                 return;
             } else if (text.startsWith(`{"url":"`)) {
                 let parsed = JSON.parse(text);

@@ -43,6 +43,7 @@ async function musicLinks() {
             e.title == "The Creation of NCS" ||
             e.title == "NoCopyrightSounds Live Stream" ||
             e.title.startsWith("10 Years Of NCS") ||
+            e.title.startsWith("NCS Mashup") ||
             e.title.endsWith("[NCS Mix]") ||
             e.title.endsWith("(Track & Build 2.0 Winners)") ||
             e.title.endsWith("(Album Mix) [NCS Release]")
