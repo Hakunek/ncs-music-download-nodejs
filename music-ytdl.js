@@ -3,14 +3,14 @@ const ytpl = require("ytpl");
 const ytdl = require("@distube/ytdl-core");
 const ffmpeg = require("fluent-ffmpeg");
 const ffmpegStatic = require("ffmpeg-static");
-console.clear();
 ffmpeg.setFfmpegPath(ffmpegStatic);
+
+console.clear();
 console.time("Job done within");
 console.log("Loading...");
 
-function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
 let config = require("./config.js");
 try {
   if (!fs.existsSync(`${config.pathForMusicFiles}`)) {
@@ -66,7 +66,8 @@ const multibar = new cliProgress.MultiBar(
   {
     clearOnComplete: false,
     hideCursor: true,
-    format: "Thread* {id}: {bar} | {currentVideoLink} | {duration}s | {eta}s",
+    format:
+      "Thread* {id}: {bar} | {currentVideoLink} | {duration}s | {eta}s | {value}/{total}",
     autopadding: true,
     stopOnComplete: true,
   },
@@ -204,6 +205,7 @@ async function downloading(ar, index = 0, barIndex = 0) {
       });
       index += 4;
       if (index <= ar.length - 1) {
+        await sleep(4000);
         downloading(ar, index, barIndex);
       } else console.log(`Thread* ${barIndex} completed it's job`);
     });

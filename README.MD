@@ -8,3 +8,6 @@ filters in files [metadata-changer-master.js](https://github.com/Hakunek/ncs-mus
 the idea behind appeared to me as I do not have unlimited internet connection and playing music from youtube used up quite a lot of my internet
 and that's how this appeared...
 in [download.bat](https://github.com/Hakunek/ncs-music-download-nodejs/blob/main/download.bat) there is mpv used as I use this on my pc and then sync music to my phones
+
+
+proxy from proxy-test.js file obtained from: https://www.freeproxylists.net/
