@@ -63,6 +63,7 @@ async function musicLinks() {
 async function downloading(ar, index) {
   if (!index) index = 0;
   if (index >= ar.length) return;
+  if (index == 0) downloading(ar, 1);
   let id = ar[index].split("https://www.youtube.com/watch?v=").pop(),
     stream = ytdl(id, { quality: "highestaudio" }),
     info = await ytdl.getInfo(ar[index], { quality: "highestaudio" });
@@ -71,22 +72,24 @@ async function downloading(ar, index) {
     .save(
       `${config.pathForMusicFiles}/${info.videoDetails.title}-${info.videoDetails.videoId}.mp3`
     )
-    .on("start", () =>
-      console.log(
-        `Downloading: ${index}/${ar.length} - ${info.videoDetails.title}-${info.videoDetails.videoId}`
-      )
-    )
+    .on("start", () => {
+      readline.cursorTo(process.stdout, 0);
+      process.stdout.write(
+        `Downloading: ${index}/${ar.length} - ${info.videoDetails.title}-${info.videoDetails.videoId}\n`
+      );
+    })
     .on("end", async () => {
       readline.cursorTo(process.stdout, 0);
       process.stdout.write(
-        `Downloaded: ${index}/${ar.length} - ${info.videoDetails.title}-${info.videoDetails.videoId}\t\t\t\n`
+        `Downloaded: ${index}/${ar.length} - ${info.videoDetails.title}-${info.videoDetails.videoId}\t\t\t`
       );
-      index++;
+      index += 2;
       if (index <= ar.length - 1) {
-        downloading(ar, [index]);
+        downloading(ar, index);
       }
     });
 }
+
 /*
 async function old(download) {
   let one = true,
