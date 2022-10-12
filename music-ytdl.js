@@ -1,10 +1,9 @@
-const fs = require("fs"),
-  ytpl = require("ytpl"),
-  readline = require("readline"),
-  ytdl = require("@distube/ytdl-core"),
-  ffmpeg = require("fluent-ffmpeg"),
-  ffmpegStatic = require("ffmpeg-static");
-
+const fs = require("fs");
+const ytpl = require("ytpl");
+const ytdl = require("@distube/ytdl-core");
+const ffmpeg = require("fluent-ffmpeg");
+const ffmpegStatic = require("ffmpeg-static");
+console.clear();
 ffmpeg.setFfmpegPath(ffmpegStatic);
 console.time("Job done within");
 console.log("Loading...");
@@ -67,85 +66,146 @@ const multibar = new cliProgress.MultiBar(
   {
     clearOnComplete: false,
     hideCursor: true,
+    format: "Thread* {id}: {bar} | {currentVideoLink} | {duration}s | {eta}s",
+    autopadding: true,
+    stopOnComplete: true,
   },
   cliProgress.Presets.shades_classic
 );
 
 const bars = [];
-
+const toHandle = [];
+const def = {
+  currentVideoLink: "-",
+  value: 0,
+  id: 0,
+};
 // ------------------------------------------------------------- DOWNLOAD SECTION -------------------------------------------------------------
 async function downloading(ar, index = 0, barIndex = 0) {
   if (index >= ar.length) return;
   if (index == 0) {
-    if (ar.length == 1) bars.push(multibar.create(1));
-    else if (ar.length == 2) {
-      bars.push(multibar.create(1));
-      bars.push(multibar.create(1));
+    if (ar.length == 1) {
+      bars.push(
+        multibar.create(1, 0, {
+          ...def,
+          id: 0,
+        })
+      );
+      toHandle.push(1);
+    } else if (ar.length == 2) {
+      bars.push(
+        multibar.create(1, 0, {
+          ...def,
+          id: 0,
+        })
+      );
+      bars.push(
+        multibar.create(1, 0, {
+          ...def,
+          id: 1,
+        })
+      );
+      toHandle.push(1, 1);
       downloading(ar, 1, 1);
     } else if (ar.length == 3) {
-      bars.push(multibar.create(1));
-      bars.push(multibar.create(1));
-      bars.push(multibar.create(1));
+      bars.push(
+        multibar.create(1, 0, {
+          ...def,
+          id: 0,
+        })
+      );
+      bars.push(
+        multibar.create(1, 0, {
+          ...def,
+          id: 1,
+        })
+      );
+      bars.push(
+        multibar.create(1, 0, {
+          ...def,
+          id: 2,
+        })
+      );
+      toHandle.push(1, 1, 1);
       downloading(ar, 1, 1);
       downloading(ar, 2, 2);
     } else {
       let correction = [];
       switch (ar.length % 4) {
         case 0:
-          correction.push(0);
-          correction.push(0);
-          correction.push(0);
+          correction.push(0, 0, 0);
           break;
         case 1:
-          correction.push(1);
-          correction.push(0);
-          correction.push(0);
+          correction.push(1, 0, 0);
           break;
         case 2:
-          correction.push(1);
-          correction.push(1);
-          correction.push(0);
+          correction.push(1, 1, 0);
           break;
         case 3:
-          correction.push(1);
-          correction.push(1);
-          correction.push(1);
+          correction.push(1, 1, 1);
           break;
       }
-      bars.push(multibar.create(Math.floor(ar.length / 4) + correction[0]));
-      bars.push(multibar.create(Math.floor(ar.length / 4) + correction[1]));
-      bars.push(multibar.create(Math.floor(ar.length / 4) + correction[2]));
-      bars.push(multibar.create(Math.floor(ar.length / 4)));
+      toHandle.push(
+        Math.floor(ar.length / 4) + correction[0],
+        Math.floor(ar.length / 4) + correction[1],
+        Math.floor(ar.length / 4) + correction[2],
+        Math.floor(ar.length / 4)
+      );
+      bars.push(
+        multibar.create(toHandle[0], 0, {
+          currentVideoLink: "-",
+          value: 0,
+          total: toHandle[0],
+          id: 0,
+        }),
+        multibar.create(toHandle[1], 0, {
+          currentVideoLink: "-",
+          value: 0,
+          total: toHandle[1],
+          id: 1,
+        }),
+        multibar.create(toHandle[2], 0, {
+          currentVideoLink: "-",
+          value: 0,
+          total: toHandle[2],
+          id: 2,
+        }),
+        multibar.create(toHandle[3], 0, {
+          currentVideoLink: "-",
+          value: 0,
+          total: toHandle[3],
+          id: 3,
+        })
+      );
       downloading(ar, 1, 1);
       downloading(ar, 2, 2);
       downloading(ar, 3, 3);
     }
   }
-  let id = ar[index].split("https://www.youtube.com/watch?v=").pop(),
-    stream = ytdl(id, { quality: "highestaudio" }),
-    info = await ytdl.getInfo(ar[index], { quality: "highestaudio" });
+  let id = ar[index].split("https://www.youtube.com/watch?v=").pop();
+  let stream = ytdl(id, { quality: "highestaudio" });
+  let info = await ytdl.getInfo(ar[index], { quality: "highestaudio" });
   ffmpeg(stream)
     .audioBitrate(128)
     .save(
       `${config.pathForMusicFiles}/${info.videoDetails.title}-${info.videoDetails.videoId}.mp3`
     )
     .on("start", () => {
-      process.stdout.clearLine();
-      process.stdout.cursorTo(cursor);
-      process.stdout.write(
-        `Downloading: ${index}/${ar.length} - ${info.videoDetails.title}-${info.videoDetails.videoId}\n`
-      );
+      bars[barIndex].update({
+        currentVideoLink: `${ar[index]}`,
+        value: toHandle[barIndex],
+      });
     })
     .on("end", async () => {
-      process.stdout.clearLine();
-      process.stdout.cursorTo(cursor);
-      process.stdout.write(
-        `Downloaded: ${index}/${ar.length} - ${info.videoDetails.title}-${info.videoDetails.videoId}\t\t\t`
-      );
+      bars[barIndex].increment();
+      bars[barIndex].update({
+        currentVideoLink: `${ar[index]}`,
+        value: toHandle[barIndex],
+      });
       index += 4;
       if (index <= ar.length - 1) {
-        downloading(ar, index, cursor);
-      }
+        downloading(ar, index, barIndex);
+      } else console.log(`Thread* ${barIndex} completed it's job`);
     });
 }
 
@@ -186,10 +246,10 @@ async function mniam() {
   const files = fs
     .readdirSync(`${config.pathForMusicFiles}`)
     .filter((e) => e.endsWith(".mp3"));
-  const temp1 = [],
-    temp2 = [],
-    temp3 = [],
-    download = [];
+  const temp1 = [];
+  const temp2 = [];
+  const temp3 = [];
+  const download = [];
   let res;
   for (const file of files) {
     if (file.includes("Release]-")) res = file.split("Release]-").pop();
@@ -217,7 +277,10 @@ async function mniam() {
     .filter((n) => !temp2.includes(n))
     .forEach((e) => download.push("https://www.youtube.com/watch?v=" + e));
   console.log(`Music to download: ${download.length}`);
-
+  console.log(
+    "Thread* - Yes I know that this name is not really correct, don't hurt me >.<"
+  );
+  console.log("Progress:");
   downloading(download, 0);
 }
 
