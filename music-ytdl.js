@@ -59,11 +59,68 @@ async function musicLinks() {
   return ar;
 }
 
+// ------------------------------------------------------------- CLI-PROGRESS SECTION -------------------------------------------------------------
+
+const cliProgress = require("cli-progress");
+
+const multibar = new cliProgress.MultiBar(
+  {
+    clearOnComplete: false,
+    hideCursor: true,
+  },
+  cliProgress.Presets.shades_classic
+);
+
+const bars = [];
+
 // ------------------------------------------------------------- DOWNLOAD SECTION -------------------------------------------------------------
-async function downloading(ar, index) {
-  if (!index) index = 0;
+async function downloading(ar, index = 0, barIndex = 0) {
   if (index >= ar.length) return;
-  if (index == 0) downloading(ar, 1);
+  if (index == 0) {
+    if (ar.length == 1) bars.push(multibar.create(1));
+    else if (ar.length == 2) {
+      bars.push(multibar.create(1));
+      bars.push(multibar.create(1));
+      downloading(ar, 1, 1);
+    } else if (ar.length == 3) {
+      bars.push(multibar.create(1));
+      bars.push(multibar.create(1));
+      bars.push(multibar.create(1));
+      downloading(ar, 1, 1);
+      downloading(ar, 2, 2);
+    } else {
+      let correction = [];
+      switch (ar.length % 4) {
+        case 0:
+          correction.push(0);
+          correction.push(0);
+          correction.push(0);
+          break;
+        case 1:
+          correction.push(1);
+          correction.push(0);
+          correction.push(0);
+          break;
+        case 2:
+          correction.push(1);
+          correction.push(1);
+          correction.push(0);
+          break;
+        case 3:
+          correction.push(1);
+          correction.push(1);
+          correction.push(1);
+          break;
+      }
+      bars.push(multibar.create(Math.floor(ar.length / 4) + correction[0]));
+      bars.push(multibar.create(Math.floor(ar.length / 4) + correction[1]));
+      bars.push(multibar.create(Math.floor(ar.length / 4) + correction[2]));
+      bars.push(multibar.create(Math.floor(ar.length / 4)));
+      downloading(ar, 1, 1);
+      downloading(ar, 2, 2);
+      downloading(ar, 3, 3);
+    }
+  }
   let id = ar[index].split("https://www.youtube.com/watch?v=").pop(),
     stream = ytdl(id, { quality: "highestaudio" }),
     info = await ytdl.getInfo(ar[index], { quality: "highestaudio" });
@@ -73,19 +130,21 @@ async function downloading(ar, index) {
       `${config.pathForMusicFiles}/${info.videoDetails.title}-${info.videoDetails.videoId}.mp3`
     )
     .on("start", () => {
-      readline.cursorTo(process.stdout, 0);
+      process.stdout.clearLine();
+      process.stdout.cursorTo(cursor);
       process.stdout.write(
         `Downloading: ${index}/${ar.length} - ${info.videoDetails.title}-${info.videoDetails.videoId}\n`
       );
     })
     .on("end", async () => {
-      readline.cursorTo(process.stdout, 0);
+      process.stdout.clearLine();
+      process.stdout.cursorTo(cursor);
       process.stdout.write(
         `Downloaded: ${index}/${ar.length} - ${info.videoDetails.title}-${info.videoDetails.videoId}\t\t\t`
       );
-      index += 2;
+      index += 4;
       if (index <= ar.length - 1) {
-        downloading(ar, index);
+        downloading(ar, index, cursor);
       }
     });
 }
