@@ -1,8 +1,9 @@
+const config = require("./config");
 const fs = require("fs"),
     NodeID3 = require("node-id3"),
     child_process = require("child_process"),
     readline = require("readline"),
-    dir = fs.readdirSync("./mp3").filter((file) => file.endsWith(".mp3")),
+    dir = fs.readdirSync(config.pathForMusicFiles).filter((file) => file.endsWith(".mp3")),
     colors = require("colors"),
     express = require("express"),
     app = express();
@@ -15,11 +16,11 @@ app.listen(3000, function (...a) {
     console.log("Listener on port 3000");
 });
 try {
-    if (!fs.existsSync("./mp3")) {
+    if (!fs.existsSync(`${config.pathForMusicFiles}`)) {
         // Directory does not exist.
         // Create new one
-        console.log("Directory './mp3' does not exist.\nCreating...");
-        fs.mkdirSync("./mp3");
+        console.log(`Directory ${config.pathForMusicFiles} does not exist.\nCreating...`);
+        fs.mkdirSync(config.pathForMusicFiles);
     }
 } catch (e) {
     console.log("An error occurred. " + e);
@@ -31,17 +32,18 @@ let leftovers = [];
 
 let toUpdate = [];
 async function dealWithLeftovers() {
-
     let splitted = [];
 
-    for (let i = 0; i < Math.ceil(toUpdate.length / 100); i++) {
+    for (let i = 0; i < Math.round(toUpdate.length / 100); i++) {
         splitted[i] = toUpdate.slice(i * 100, (i + 1) * 100);
     }
     let active = splitted.length;
     if (splitted.length == 0) process.kill(0);
 
     for (let i = 0; i < splitted.length; i++)
-        splitted[1] = splitted[i].map((element) => { return { file: element.file, url: element.url } })
+        splitted[1] = splitted[i].map((element) => {
+            return { file: element.file, url: element.url };
+        });
 
     console.log(`Spawning ${splitted.length} children...`);
     let a = 0;
@@ -76,7 +78,7 @@ async function dealWithLeftovers() {
 }
 
 app.put(`/leftover`, (request, result) => {
-    console.log(request.body)
+    console.log(request.body);
 });
 
 (async () => {
@@ -84,7 +86,7 @@ app.put(`/leftover`, (request, result) => {
         b = 0,
         c = 0;
     for (const file of dir) {
-        const filepath = "./mp3/" + file;
+        const filepath = config.pathForMusicFiles+"/" + file;
         const readTags = NodeID3.read(filepath);
         a++;
         if (
@@ -119,9 +121,10 @@ app.put(`/leftover`, (request, result) => {
     let active = splitted.length;
     if (splitted.length == 0) process.kill(0);
 
-
     for (let i = 0; i < splitted.length; i++)
-        splitted[1] = splitted[i].map((element) => { return { file: element.file, url: element.url } })
+        splitted[1] = splitted[i].map((element) => {
+            return { file: element.file, url: element.url };
+        });
 
     console.log(`Spawning ${splitted.length} children...`);
     for (let i = 0; i < splitted.length; i++) {
@@ -136,12 +139,11 @@ app.put(`/leftover`, (request, result) => {
             if (text == 1) {
                 c++;
                 readline.cursorTo(process.stdout, 0);
-                process.stdout.write(`${Math.round((c / b) * 1000) / 10}%\t`);
+                process.stdout.write(`${Math.round((c / b) * 1000) / 10/splitted.length}%\t`);
                 return;
-            }
-            else if (text.startsWith(`{"url":"`)) {
-                let parsed = JSON.parse(text)
-                leftovers.push(parsed)
+            } else if (text.startsWith(`{"url":"`)) {
+                let parsed = JSON.parse(text);
+                leftovers.push(parsed);
                 return;
             }
             console.log(colors.green(`[CHILD ${`#${i}`.cyan}] => `), text);
