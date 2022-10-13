@@ -45,7 +45,10 @@ async function musicLinks() {
             e.title.startsWith("10 Years Of NCS") ||
             e.title.endsWith("[NCS Mix]") ||
             e.title.endsWith("(Track & Build 2.0 Winners)") ||
-            e.title.endsWith("(Album Mix) [NCS Release]")
+            e.title.endsWith("(Album Mix) [NCS Release]") ||
+            e.title == "NCS Mashup - Biggest NoCopyrightSounds Songs" ||
+            //this one has just music version so there is no need to have it two times
+            e.title == "Unknown Brain - Saviour (feat. Chris Linton) [NCS Official Video]"
         )
             return;
         queue.push(e.url.split(`&list=${config.playlistId}`).shift());
