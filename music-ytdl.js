@@ -1,6 +1,6 @@
 const fs = require("fs");
 const ytpl = require("ytpl");
-const ytdl = require("@distube/ytdl-core");
+const ytdl = require("ytdl-core");
 const ffmpeg = require("fluent-ffmpeg");
 const ffmpegStatic = require("ffmpeg-static");
 ffmpeg.setFfmpegPath(ffmpegStatic);
